@@ -5,9 +5,11 @@ import javax.inject._
 import play.api.data.Forms._
 import play.api.data._
 import play.api.mvc._
+import services.UrlShortenerService
 
 @Singleton
-class HomeController @Inject()(components: MessagesControllerComponents)
+class HomeController @Inject()(components: MessagesControllerComponents,
+                               urlShortenerService: UrlShortenerService)
   extends MessagesAbstractController(components) {
 
   private lazy val urlForm = Form(single("url" -> nonEmptyText))
@@ -26,7 +28,9 @@ class HomeController @Inject()(components: MessagesControllerComponents)
         BadRequest(views.html.index(formWithErrors))
       },
       url => {
-        Redirect(routes.HomeController.index(Some(url)))
+        val shortUrlId = urlShortenerService.shortenUrl(url)
+        // TODO: make a real URL from URL ID.
+        Redirect(routes.HomeController.index(Some(shortUrlId)))
       }
     )
   }
