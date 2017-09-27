@@ -2,7 +2,6 @@ package controllers
 
 import javax.inject._
 
-import play.api.Logger
 import play.api.data.Forms._
 import play.api.data._
 import play.api.mvc._
@@ -15,8 +14,8 @@ class HomeController @Inject()(components: MessagesControllerComponents)
 
   /** Returns the home page with the URL input field.
     */
-  def index() = Action { implicit request: MessagesRequestHeader =>
-    Ok(views.html.index(urlForm))
+  def index(url: Option[String]) = Action { implicit request: MessagesRequestHeader =>
+    Ok(views.html.index(urlForm, url))
   }
 
   /** Receives URL from the input field, shorten it and shows the result URL.
@@ -27,9 +26,7 @@ class HomeController @Inject()(components: MessagesControllerComponents)
         BadRequest(views.html.index(formWithErrors))
       },
       url => {
-        // TODO: show URL to the user.
-        Logger.info(s"URL: $url")
-        Redirect(routes.HomeController.index())
+        Redirect(routes.HomeController.index(Some(url)))
       }
     )
   }

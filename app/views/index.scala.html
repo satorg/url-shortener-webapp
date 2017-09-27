@@ -1,9 +1,16 @@
-@(urlForm: Form[String])(implicit request: MessagesRequestHeader)
+@(urlForm: Form[String], shortenedUrlOpt: Option[String] = None)(implicit request: MessagesRequestHeader)
 
 @import helper._
 
 @main("Welcome to Play") {
-    <h1>Welcome to Play!</h1>
+    <h1>URL Shortener</h1>
+    @for(shortenedUrl <- shortenedUrlOpt) {
+        <div>
+            <p><b>Your URL:</b></p>
+            <p>@shortenedUrl</p>
+        </div>
+    }
+    <div><b>Enter your URL here:</b></div>
     @helper.form(action = routes.HomeController.submitUrl()) {
         @CSRF.formField
         @helper.inputText(urlForm("url"))
