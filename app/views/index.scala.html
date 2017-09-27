@@ -1,5 +1,11 @@
-@()
+@(urlForm: Form[String])(implicit request: MessagesRequestHeader)
+
+@import helper._
 
 @main("Welcome to Play") {
-  <h1>Welcome to Play!</h1>
+    <h1>Welcome to Play!</h1>
+    @helper.form(action = routes.HomeController.submitUrl()) {
+        @CSRF.formField
+        @helper.inputText(urlForm("url"))
+    }
 }
