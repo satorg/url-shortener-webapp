@@ -16,8 +16,9 @@ class HomeController @Inject()(components: MessagesControllerComponents,
 
   /** Returns the home page with the URL input field.
     */
-  def index(url: Option[String]) = Action { implicit request: MessagesRequestHeader =>
-    Ok(views.html.index(urlForm, url))
+  def index(urlIdOpt: Option[String]) = Action { implicit request: MessagesRequestHeader =>
+    val shortUrlOpt = urlIdOpt.map(routes.HomeController.gotoUrl(_).absoluteURL())
+    Ok(views.html.index(urlForm, shortUrlOpt))
   }
 
   /** Receives URL from the input field, shorten it and shows the result URL.
@@ -29,8 +30,7 @@ class HomeController @Inject()(components: MessagesControllerComponents,
       },
       url => {
         val shortUrlId = urlShortenerService.shortenUrl(url)
-        val shortUrl = routes.HomeController.gotoUrl(shortUrlId).absoluteURL()
-        Redirect(routes.HomeController.index(Some(shortUrl)))
+        Redirect(routes.HomeController.index(Some(shortUrlId)))
       }
     )
   }
