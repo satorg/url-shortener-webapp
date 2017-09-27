@@ -29,9 +29,16 @@ class HomeController @Inject()(components: MessagesControllerComponents,
       },
       url => {
         val shortUrlId = urlShortenerService.shortenUrl(url)
-        // TODO: make a real URL from URL ID.
-        Redirect(routes.HomeController.index(Some(shortUrlId)))
+        val shortUrl = routes.HomeController.gotoUrl(shortUrlId).absoluteURL()
+        Redirect(routes.HomeController.index(Some(shortUrl)))
       }
     )
+  }
+
+  /** Restores an original URL from the shortened part and redirects to this URL.
+    */
+  def gotoUrl(urlId: String) = Action { implicit request =>
+    val originalUrl = urlShortenerService.restoreUrl(urlId)
+    Redirect(originalUrl)
   }
 }
