@@ -9,6 +9,7 @@ import slick.jdbc.H2Profile
 import slick.jdbc.H2Profile.api._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 object SlickUrlShortenerService {
 
@@ -56,13 +57,19 @@ class SlickUrlShortenerService @Inject()(override protected val dbConfigProvider
   }
 
   override def restoreUrl(urlId: String): Future[String] = initialized {
-    db.
-      run {
-        (for (url <- urls if url.id === decodeId(urlId)) yield url.originalUrl).result.map(_.headOption)
-      }.
-      map {
-        case Some(foundUrl) => foundUrl
-        case None => throw new NoSuchElementException(urlId)
+    decodeId(urlId).
+      fold(Future.failed[String](new NoSuchElementException(urlId))) { decodedUrlId =>
+        db.
+          run {
+            {
+              for (url <- urls if url.id === decodedUrlId) yield url.originalUrl
+            }.
+              result.map(_.headOption)
+          }.
+          map {
+            case Some(foundUrl) => foundUrl
+            case None => throw new NoSuchElementException(urlId)
+          }
       }
   }
 
@@ -75,8 +82,10 @@ class SlickUrlShortenerService @Inject()(override protected val dbConfigProvider
     Base64.getUrlEncoder.encodeToString(idBytes)
   }
 
-  private def decodeId(encodedId: String): Long = {
-    val idBytes = Base64.getUrlDecoder.decode(encodedId)
-    createByteBuffer().put(idBytes).getLong(0)
+  private def decodeId(encodedId: String): Option[Long] = {
+    Try {
+      val idBytes = Base64.getUrlDecoder.decode(encodedId)
+      createByteBuffer().put(idBytes).getLong(0)
+    }.toOption
   }
 }
