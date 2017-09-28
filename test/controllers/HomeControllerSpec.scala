@@ -45,7 +45,7 @@ class HomeControllerSpec extends PlaySpec with MockitoSugar with OptionValues {
 
       status(result) mustBe OK
       contentType(result) mustBe Some("text/html")
-      contentAsString(result) must include("Your URL:")
+      contentAsString(result) must include("Your short URL:")
       contentAsString(result) must include(testUrlId)
     }
   }
@@ -73,6 +73,15 @@ class HomeControllerSpec extends PlaySpec with MockitoSugar with OptionValues {
       val result = controller.gotoUrl(testId).apply(fakeRequest)
       status(result) mustBe SEE_OTHER
       header(LOCATION, result).value mustBe testUrl
+    }
+    "show a error if the provided short URL is not valid" in new Fixture {
+      val testId = "fake-id"
+
+      when(urlShortenerService.restoreUrl(testId)) thenReturn Future.failed(new NoSuchElementException)
+
+      val result = controller.gotoUrl(testId).apply(fakeRequest)
+      status(result) mustBe BAD_REQUEST
+      contentAsString(result) must include("The provided short URL does not exists!")
     }
   }
 }
