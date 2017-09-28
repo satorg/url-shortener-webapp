@@ -37,7 +37,7 @@ class SlickUrlShortenerService @Inject()(override protected val dbConfigProvider
   private def initialized[T](block: => Future[T]): Future[T] = dbInit.flatMap(_ => block)
 
   override def shortenUrl(sourceUrl: String): Future[String] = initialized {
-
+    // TODO: build a single-expression query instead of executing two expressions transactionally.
     db.
       run {
         {
