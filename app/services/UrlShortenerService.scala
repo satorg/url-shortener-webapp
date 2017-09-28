@@ -1,10 +1,13 @@
 package services
 
+import java.util.UUID
 import javax.inject._
 
 import com.google.inject.ImplementedBy
 
-@ImplementedBy(classOf[UrlShortenerServiceImpl])
+import scala.collection.concurrent.TrieMap
+
+@ImplementedBy(classOf[MemUrlShortenerService])
 trait UrlShortenerService {
 
   /** Shortens the passed URL.
@@ -21,9 +24,22 @@ trait UrlShortenerService {
 }
 
 @Singleton
-class UrlShortenerServiceImpl extends UrlShortenerService {
+class MemUrlShortenerService extends UrlShortenerService {
 
-  override def shortenUrl(sourceUrl: String): String = sourceUrl
+  private val urlsById = TrieMap.empty[UUID, String]
+  private val idsByUrl = TrieMap.empty[String, UUID]
 
-  override def restoreUrl(urlId: String): String = urlId
+  override def shortenUrl(sourceUrl: String): String = {
+    val newId = UUID.randomUUID()
+    idsByUrl.putIfAbsent(sourceUrl, newId).
+      getOrElse {
+        urlsById.update(newId, sourceUrl)
+        newId
+      }.
+      toString
+  }
+
+  override def restoreUrl(urlId: String): String = {
+    urlsById(UUID.fromString(urlId)) // TODO: no error handling
+  }
 }
