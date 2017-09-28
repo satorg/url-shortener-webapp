@@ -1,5 +1,7 @@
 package services
 
+import java.nio.ByteBuffer
+import java.util.Base64
 import javax.inject.{Inject, Singleton}
 
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
@@ -50,17 +52,31 @@ class SlickUrlShortenerService @Inject()(override protected val dbConfigProvider
           }.
           transactionally
       }.
-      map(_.toString)
+      map(encodeId)
   }
 
   override def restoreUrl(urlId: String): Future[String] = initialized {
     db.
       run {
-        (for (url <- urls if url.id === urlId.toLong) yield url.originalUrl).result.map(_.headOption)
+        (for (url <- urls if url.id === decodeId(urlId)) yield url.originalUrl).result.map(_.headOption)
       }.
       map {
         case Some(foundUrl) => foundUrl
         case None => throw new NoSuchElementException(urlId)
       }
+  }
+
+  private def createByteBuffer() = {
+    ByteBuffer.allocate(8)
+  }
+
+  private def encodeId(id: Long): String = {
+    val idBytes = createByteBuffer().putLong(id).array()
+    Base64.getUrlEncoder.encodeToString(idBytes)
+  }
+
+  private def decodeId(encodedId: String): Long = {
+    val idBytes = Base64.getUrlDecoder.decode(encodedId)
+    createByteBuffer().put(idBytes).getLong(0)
   }
 }
