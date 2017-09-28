@@ -31,7 +31,6 @@ class SlickUrlShortenerService @Inject()(idGenerator: IdGenerator,
   extends UrlShortenerService
     with HasDatabaseConfigProvider[H2Profile] {
 
-  // TODO: make it fully async
   private val dbInit = db.run(urls.schema.create)
 
   private def initialized[T](block: => Future[T]): Future[T] = dbInit.flatMap(_ => block)
@@ -39,26 +38,30 @@ class SlickUrlShortenerService @Inject()(idGenerator: IdGenerator,
   override def shortenUrl(sourceUrl: String): Future[String] = initialized {
 
     val newUrlId = idGenerator.generateId()
-    db.run {
-      val action = {
-        for (url <- urls if url.originalUrl === sourceUrl) yield url.urlId
-      }.
-        result.headOption.
-        flatMap {
-          case Some(oldUrlId) =>
-            DBIO.successful(oldUrlId)
-          case None =>
-            (urls += (newUrlId, sourceUrl)).map(_ => newUrlId)
+    db.
+      run {
+        {
+          for (url <- urls if url.originalUrl === sourceUrl) yield url.urlId
         }.
-        transactionally
-
-      action
-    }
+          result.headOption.
+          flatMap {
+            case Some(oldUrlId) =>
+              DBIO.successful(oldUrlId)
+            case None =>
+              (urls += (newUrlId, sourceUrl)).map(_ => newUrlId)
+          }.
+          transactionally
+      }
   }
 
   override def restoreUrl(urlId: String): Future[String] = initialized {
-    db.run {
-      (for (url <- urls if url.urlId === urlId) yield url.originalUrl).result.map(_.head)
-    }
+    db.
+      run {
+        (for (url <- urls if url.urlId === urlId) yield url.originalUrl).result.map(_.headOption)
+      }.
+      map {
+        case Some(foundUrl) => foundUrl
+        case None => throw new NoSuchElementException(urlId)
+      }
   }
 }

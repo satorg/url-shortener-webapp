@@ -19,7 +19,7 @@ trait UrlShortenerService {
 
   /** Restores an original URL from the passed short URL's ID
     *
-    * @return the original long URL
+    * @return the original long URL or NoSuchElementException if the passed urlId doesn't exist
     */
   def restoreUrl(urlId: String): Future[String]
 }
