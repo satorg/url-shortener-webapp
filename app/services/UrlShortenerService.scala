@@ -8,7 +8,7 @@ import com.google.inject.ImplementedBy
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 
-@ImplementedBy(classOf[MemUrlShortenerService])
+@ImplementedBy(classOf[SlickUrlShortenerService])
 trait UrlShortenerService {
 
   /** Shortens the passed URL.
