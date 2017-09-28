@@ -9,6 +9,10 @@ To compile and run the application:
 
     $ sbt run
 
+3. To run tests use:
+
+    $ sbt test
+
 The PlayFramework is used because it is the industry-standard for creating web applications with Scala.
 
 By default, the application uses H2 in-memory database, so no external dependencies are required to run the application.
