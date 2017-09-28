@@ -6,8 +6,7 @@ import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.H2Profile
 import slick.jdbc.H2Profile.api._
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 object SlickUrlShortenerService {
 
@@ -33,9 +32,11 @@ class SlickUrlShortenerService @Inject()(idGenerator: IdGenerator,
     with HasDatabaseConfigProvider[H2Profile] {
 
   // TODO: make it fully async
-  Await.result(db.run(urls.schema.create), 5.seconds)
+  private val dbInit = db.run(urls.schema.create)
 
-  override def shortenUrl(sourceUrl: String): Future[String] = {
+  private def initialized[T](block: => Future[T]): Future[T] = dbInit.flatMap(_ => block)
+
+  override def shortenUrl(sourceUrl: String): Future[String] = initialized {
 
     val newUrlId = idGenerator.generateId()
     db.run {
@@ -55,7 +56,9 @@ class SlickUrlShortenerService @Inject()(idGenerator: IdGenerator,
     }
   }
 
-  override def restoreUrl(urlId: String): Future[String] = db.run {
-    (for (url <- urls if url.urlId === urlId) yield url.originalUrl).result.map(_.head)
+  override def restoreUrl(urlId: String): Future[String] = initialized {
+    db.run {
+      (for (url <- urls if url.urlId === urlId) yield url.originalUrl).result.map(_.head)
+    }
   }
 }
