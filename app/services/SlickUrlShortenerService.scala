@@ -10,13 +10,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object SlickUrlShortenerService {
 
-  class Urls(tag: Tag) extends Table[(String, String)](tag, "URLS") {
+  class Urls(tag: Tag) extends Table[(Long, String)](tag, "URLS") {
 
-    def urlId = column[String]("url_id", O.PrimaryKey)
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
     def originalUrl = column[String]("original_url", O.Unique)
 
-    override def * = (urlId, originalUrl)
+    override def * = (id, originalUrl)
   }
 
   val urls = TableQuery[Urls]
@@ -25,8 +25,7 @@ object SlickUrlShortenerService {
 import services.SlickUrlShortenerService._
 
 @Singleton
-class SlickUrlShortenerService @Inject()(idGenerator: IdGenerator,
-                                         override protected val dbConfigProvider: DatabaseConfigProvider)
+class SlickUrlShortenerService @Inject()(override protected val dbConfigProvider: DatabaseConfigProvider)
                                         (implicit ex: ExecutionContext)
   extends UrlShortenerService
     with HasDatabaseConfigProvider[H2Profile] {
@@ -37,27 +36,27 @@ class SlickUrlShortenerService @Inject()(idGenerator: IdGenerator,
 
   override def shortenUrl(sourceUrl: String): Future[String] = initialized {
 
-    val newUrlId = idGenerator.generateId()
     db.
       run {
         {
-          for (url <- urls if url.originalUrl === sourceUrl) yield url.urlId
+          for (url <- urls if url.originalUrl === sourceUrl) yield url.id
         }.
           result.headOption.
           flatMap {
-            case Some(oldUrlId) =>
-              DBIO.successful(oldUrlId)
+            case Some(existingUrlId) =>
+              DBIO.successful(existingUrlId)
             case None =>
-              (urls += (newUrlId, sourceUrl)).map(_ => newUrlId)
+              urls.returning(urls.map(_.id)) += (0, sourceUrl)
           }.
           transactionally
-      }
+      }.
+      map(_.toString)
   }
 
   override def restoreUrl(urlId: String): Future[String] = initialized {
     db.
       run {
-        (for (url <- urls if url.urlId === urlId) yield url.originalUrl).result.map(_.headOption)
+        (for (url <- urls if url.id === urlId.toLong) yield url.originalUrl).result.map(_.headOption)
       }.
       map {
         case Some(foundUrl) => foundUrl
