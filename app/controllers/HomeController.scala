@@ -45,8 +45,12 @@ class HomeController @Inject()(components: MessagesControllerComponents,
     */
   def gotoUrl(urlId: String): Action[AnyContent] =
     Action.async { implicit request =>
-      urlShortenerService.restoreUrl(urlId).map { originalUrl =>
-        Redirect(originalUrl)
-      }
+      urlShortenerService.restoreUrl(urlId).
+        map { originalUrl =>
+          Redirect(originalUrl)
+        }.
+        recover {
+          case _: NoSuchElementException => BadRequest(views.html.error())
+        }
     }
 }
