@@ -7,10 +7,10 @@
     @for(shortenedUrl <- shortenedUrlOpt) {
         <div>
             <p><b>Your short URL:</b></p>
-            <p>@shortenedUrl</p>
+            <a href="@shortenedUrl">@shortenedUrl</a>
         </div>
     }
-    <div><b>Enter your URL here:</b></div>
+    <div><p><b>Enter your URL here:</b></p></div>
     @helper.form(action = routes.HomeController.submitUrl()) {
         @CSRF.formField
         @helper.inputText(urlForm("url"))
