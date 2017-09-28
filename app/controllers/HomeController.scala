@@ -12,7 +12,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 object HomeController {
-  /** Validates the passed URL string
+  /** Validates the passed URL string.
     */
   def isUrlValid(urlStr: String): Boolean = {
     Try {
@@ -62,9 +62,11 @@ class HomeController @Inject()(components: MessagesControllerComponents,
     Action.async { implicit request =>
       urlShortenerService.restoreUrl(urlId).
         map { originalUrl =>
+          // The original URL is retrieved successfully, redirect to it.
           Redirect(originalUrl)
         }.
         recover {
+          // Failed to retrieve the original URL, show the error page.
           case _: NoSuchElementException => BadRequest(views.html.error())
         }
     }

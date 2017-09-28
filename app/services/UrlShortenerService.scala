@@ -4,6 +4,8 @@ import com.google.inject.ImplementedBy
 
 import scala.concurrent.Future
 
+/** Manages shortening and restoring URL strings.
+  */
 @ImplementedBy(classOf[SlickUrlShortenerService])
 trait UrlShortenerService {
 

@@ -27,6 +27,8 @@ object SlickUrlShortenerService {
 
 import services.SlickUrlShortenerService._
 
+/** Slick-based implementation of `UrlShortenerService`
+  */
 @Singleton
 class SlickUrlShortenerService @Inject()(override protected val dbConfigProvider: DatabaseConfigProvider)
                                         (implicit ex: ExecutionContext)
@@ -35,6 +37,7 @@ class SlickUrlShortenerService @Inject()(override protected val dbConfigProvider
 
   private val dbInit = db.run(urls.schema.create)
 
+  // Allows to run any queries to DB only when it is completely initialized.
   private def initialized[T](block: => Future[T]): Future[T] = dbInit.flatMap(_ => block)
 
   override def shortenUrl(sourceUrl: String): Future[String] = initialized {
@@ -42,13 +45,16 @@ class SlickUrlShortenerService @Inject()(override protected val dbConfigProvider
     db.
       run {
         {
+          // Search for existing URLs.
           for (url <- urls if url.originalUrl === sourceUrl) yield url.id
         }.
           result.headOption.
           flatMap {
             case Some(existingUrlId) =>
+              // There is existing URL in the DB already, just return it.
               DBIO.successful(existingUrlId)
             case None =>
+              // The existing URL not found, create a new one.
               urls.returning(urls.map(_.id)) += (0, sourceUrl)
           }.
           transactionally
@@ -62,6 +68,7 @@ class SlickUrlShortenerService @Inject()(override protected val dbConfigProvider
         db.
           run {
             {
+              // Search for URL entry by its ID.
               for (url <- urls if url.id === decodedUrlId) yield url.originalUrl
             }.
               result.map(_.headOption)
