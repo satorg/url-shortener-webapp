@@ -10,9 +10,11 @@
             <a href="@shortenedUrl">@shortenedUrl</a>
         </div>
     }
-    <div><p><b>Enter your URL here:</b></p></div>
-    @helper.form(action = routes.HomeController.submitUrl()) {
-        @CSRF.formField
-        @helper.inputText(urlForm("url"))
-    }
+    <div>
+        <p><b>Enter source URL here:</b></p>
+        @helper.form(action = routes.HomeController.submitUrl()) {
+            @CSRF.formField
+            @helper.inputText(urlForm("url"), args = '_label -> "", 'size -> 100, 'placeholder -> "http://")
+        }
+    </div>
 }
