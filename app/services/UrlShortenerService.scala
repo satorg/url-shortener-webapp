@@ -6,6 +6,7 @@ import javax.inject._
 import com.google.inject.ImplementedBy
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.{ExecutionContext, Future}
 
 @ImplementedBy(classOf[MemUrlShortenerService])
 trait UrlShortenerService {
@@ -14,22 +15,23 @@ trait UrlShortenerService {
     *
     * @return the shortened URL's ID.
     */
-  def shortenUrl(sourceUrl: String): String
+  def shortenUrl(sourceUrl: String): Future[String]
 
   /** Restores an original URL from the passed short URL's ID
     *
     * @return the original long URL
     */
-  def restoreUrl(urlId: String): String
+  def restoreUrl(urlId: String): Future[String]
 }
 
 @Singleton
-class MemUrlShortenerService extends UrlShortenerService {
+class MemUrlShortenerService @Inject()(implicit ex: ExecutionContext)
+  extends UrlShortenerService {
 
   private val urlsById = TrieMap.empty[UUID, String]
   private val idsByUrl = TrieMap.empty[String, UUID]
 
-  override def shortenUrl(sourceUrl: String): String = {
+  override def shortenUrl(sourceUrl: String): Future[String] = Future {
     val newId = UUID.randomUUID()
     idsByUrl.putIfAbsent(sourceUrl, newId).
       getOrElse {
@@ -39,7 +41,7 @@ class MemUrlShortenerService extends UrlShortenerService {
       toString
   }
 
-  override def restoreUrl(urlId: String): String = {
+  override def restoreUrl(urlId: String): Future[String] = Future {
     urlsById(UUID.fromString(urlId)) // TODO: no error handling
   }
 }

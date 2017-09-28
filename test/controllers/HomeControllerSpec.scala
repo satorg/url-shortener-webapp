@@ -23,6 +23,8 @@ class HomeControllerSpec extends PlaySpec with MockitoSugar with OptionValues {
   import HomeControllerSpec._
 
   trait Fixture {
+    implicit def executionContext = ExecutionContext.global
+
     val urlShortenerService = mock[UrlShortenerService]
     val controller = new HomeController(stubMessagesControllerComponents(), urlShortenerService)
 
@@ -52,7 +54,7 @@ class HomeControllerSpec extends PlaySpec with MockitoSugar with OptionValues {
       val testUrl = "http://fake.griddynamics.com"
       val testId = "fake-id"
 
-      when(urlShortenerService.shortenUrl(testUrl)) thenReturn testId
+      when(urlShortenerService.shortenUrl(testUrl)) thenReturn Future.successful(testId)
 
       val request = fakeRequest.withBody(AnyContentAsFormUrlEncoded(Map("url" -> Seq(testUrl))))
       val result = controller.submitUrl().apply(request)
@@ -66,7 +68,7 @@ class HomeControllerSpec extends PlaySpec with MockitoSugar with OptionValues {
       val testId = "fake-id"
       val testUrl = "http://fake.griddynamics.com"
 
-      when(urlShortenerService.restoreUrl(testId)) thenReturn testUrl
+      when(urlShortenerService.restoreUrl(testId)) thenReturn Future.successful(testUrl)
 
       val result = controller.gotoUrl(testId).apply(fakeRequest)
       status(result) mustBe SEE_OTHER
@@ -91,13 +93,13 @@ object HomeControllerSpec {
                                        playBodyParsers: PlayBodyParsers = stubPlayBodyParsers(NoMaterializer),
                                        messagesApi: MessagesApi = stubMessagesApi(),
                                        langs: Langs = stubLangs(),
-                                       fileMimeTypes: FileMimeTypes = new DefaultFileMimeTypes(FileMimeTypesConfiguration()),
-                                       executionContext: ExecutionContext = ExecutionContext.global):
+                                       fileMimeTypes: FileMimeTypes = new DefaultFileMimeTypes(FileMimeTypesConfiguration()))
+                                      (implicit executionContext: ExecutionContext):
   DefaultMessagesControllerComponents = {
 
     DefaultMessagesControllerComponents(
-      new DefaultMessagesActionBuilder(bodyParser, messagesApi)(executionContext),
-      DefaultActionBuilder(bodyParser)(executionContext),
+      new DefaultMessagesActionBuilder(bodyParser, messagesApi),
+      DefaultActionBuilder(bodyParser),
       playBodyParsers,
       messagesApi,
       langs,
