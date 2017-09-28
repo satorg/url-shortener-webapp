@@ -1,5 +1,6 @@
 package controllers
 
+import java.net.URL
 import javax.inject._
 
 import play.api.data.Forms._
@@ -8,6 +9,20 @@ import play.api.mvc._
 import services.UrlShortenerService
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
+
+object HomeController {
+  /** Validates the passed URL string
+    */
+  def isUrlValid(urlStr: String): Boolean = {
+    Try {
+      new URL(urlStr).toURI
+    }.
+      fold(_ => false, _ => true)
+  }
+}
+
+import controllers.HomeController._
 
 @Singleton
 class HomeController @Inject()(components: MessagesControllerComponents,
@@ -15,7 +30,7 @@ class HomeController @Inject()(components: MessagesControllerComponents,
                               (implicit ex: ExecutionContext)
   extends MessagesAbstractController(components) {
 
-  private lazy val urlForm = Form(single("url" -> nonEmptyText))
+  private lazy val urlForm = Form(single("url" -> nonEmptyText.verifying("error.url", isUrlValid _)))
 
   /** Returns the home page with the URL input field.
     */
