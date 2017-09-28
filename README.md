@@ -18,6 +18,7 @@ The PlayFramework is used because it is the industry-standard for creating web a
 By default, the application uses H2 in-memory database, so no external dependencies are required to run the application.
 H2 is used because it is very simple to configure with PlayFramework, and it is just enough for the proposed solution.
 
-The current approach is to take an URL from a user and then store this URL into database with auto-generated ID field.
-Then the created ID is used to build the short URL. But before to be presented to the user, the ID is base64-encoded
-to hide the fact that is is just a counter.
+The current approach takes an URL from a user and then stores this URL into database with auto-generated ID field.
+Then the created ID is used to build the short URL. It was not required by the task description,
+but we encoded it with base64-encoded to hide the fact that is is just a counter/sequential number.
+
