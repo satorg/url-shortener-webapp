@@ -15,6 +15,7 @@
         @helper.form(action = routes.HomeController.submitUrl()) {
             @CSRF.formField
             @helper.inputText(urlForm("url"), args = '_label -> "", 'size -> 100, 'placeholder -> "http://")
+            <button type="submit">Get short URL</button>
         }
     </div>
 }
