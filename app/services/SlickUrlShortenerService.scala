@@ -1,7 +1,5 @@
 package services
 
-import java.nio.ByteBuffer
-import java.util.Base64
 import javax.inject.{Inject, Singleton}
 
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
@@ -10,7 +8,6 @@ import slick.jdbc.H2Profile.api._
 import slick.jdbc.meta.MTable
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 object SlickUrlShortenerService {
 
@@ -31,7 +28,8 @@ import services.SlickUrlShortenerService._
 /** Slick-based implementation of `UrlShortenerService`
   */
 @Singleton
-class SlickUrlShortenerService @Inject()(override protected val dbConfigProvider: DatabaseConfigProvider)
+class SlickUrlShortenerService @Inject()(encoder: StringEncoderService,
+                                         override protected val dbConfigProvider: DatabaseConfigProvider)
                                         (implicit ex: ExecutionContext)
   extends UrlShortenerService
     with HasDatabaseConfigProvider[H2Profile] {
@@ -65,11 +63,11 @@ class SlickUrlShortenerService @Inject()(override protected val dbConfigProvider
           }.
           transactionally
       }.
-      map(encodeId)
+      map(encoder.encodeLong)
   }
 
   override def restoreUrl(urlId: String): Future[String] = initialized {
-    decodeId(urlId).
+    encoder.decodeLong(urlId).
       fold(Future.failed[String](new NoSuchElementException(urlId))) { decodedUrlId =>
         db.
           run {
@@ -84,21 +82,5 @@ class SlickUrlShortenerService @Inject()(override protected val dbConfigProvider
             case None => throw new NoSuchElementException(urlId)
           }
       }
-  }
-
-  private def createByteBuffer() = {
-    ByteBuffer.allocate(8)
-  }
-
-  private def encodeId(id: Long): String = {
-    val idBytes = createByteBuffer().putLong(id).array()
-    Base64.getUrlEncoder.encodeToString(idBytes)
-  }
-
-  private def decodeId(encodedId: String): Option[Long] = {
-    Try {
-      val idBytes = Base64.getUrlDecoder.decode(encodedId)
-      createByteBuffer().put(idBytes).getLong(0)
-    }.toOption
   }
 }
