@@ -7,6 +7,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.H2Profile
 import slick.jdbc.H2Profile.api._
+import slick.jdbc.meta.MTable
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -35,7 +36,12 @@ class SlickUrlShortenerService @Inject()(override protected val dbConfigProvider
   extends UrlShortenerService
     with HasDatabaseConfigProvider[H2Profile] {
 
-  private val dbInit = db.run(urls.schema.create)
+  private val dbInit = db.run {
+    MTable.getTables(urls.baseTableRow.tableName).
+      flatMap { tables =>
+        if (tables.isEmpty) urls.schema.create else DBIO.successful(())
+      }
+  }
 
   // Allows to run any queries to DB only when it is completely initialized.
   private def initialized[T](block: => Future[T]): Future[T] = dbInit.flatMap(_ => block)
