@@ -1,6 +1,6 @@
 ### URL Shortener Web Application
 
-Technology stack used: SBT 0.13.16, Scala 2.12.3, PlayFramework 2.6.5 with Slick database connector.
+Technology stack used: SBT 1.0.2, Scala 2.12.4, PlayFramework 2.6.6 with Slick database connector.
 To compile and run the application:
 
 1. Install [SBT](http://www.scala-sbt.org/download.html)
